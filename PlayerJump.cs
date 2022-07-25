@@ -2,6 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Animator))]
+
 public class PlayerJump : MonoBehaviour
 {
     [Header("Jump Details")]
@@ -18,14 +21,19 @@ public class PlayerJump : MonoBehaviour
 
     [Header("Components")]
     private Rigidbody2D rb;
-
-    
+    private Animator myAnimator;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        myAnimator = GetComponent<Animator>();
         jumpTimeCounter = jumpTime;
     }
+
+    //myAnimator.SetBool("Falling", true);
+    //myAnimator.SetBool("Falling", false);
+    //myAnimator.SetTrigger("Jump");
+    //myAnimator.ResetTrigger("Jump");
 
     private void Update()
     {
@@ -35,6 +43,8 @@ public class PlayerJump : MonoBehaviour
         if (grounded)
         {
             jumpTimeCounter = jumpTime;
+            myAnimator.ResetTrigger("Jump");
+            myAnimator.SetBool("Falling", false);
         }
 
         //use space and w to jump
@@ -43,31 +53,55 @@ public class PlayerJump : MonoBehaviour
             //Jump!
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
             stoppedJumping = false;
+            //tell the animator to play jump animation
+            myAnimator.SetTrigger("Jump");
         }
 
         //to keep jumping while button is held
         if (Input.GetButton("Jump") && !stoppedJumping && (jumpTimeCounter > 0))
         {
-            
-            
             //Jump!
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
             jumpTimeCounter -= Time.deltaTime;
-
-            //if we stop holding button
+            myAnimator.SetTrigger("Jump");
+        }
+        
+        //if we stop holding button
         if (Input.GetButtonUp("Jump"))
         {
             jumpTimeCounter = 0;
             stoppedJumping = true;
+            myAnimator.SetBool("Falling", true);
+            myAnimator.ResetTrigger("Jump");
         }
-        }
-    }
 
-    
+        if(rb.velocity.y < 0)
+        {
+            myAnimator.SetBool("Falling", true);
+        }
+        
+    }
 
     private void OnDrawGizmos()
     {
         Gizmos.DrawSphere(groundCheck.position, radOCircle);
+    }
+
+    private void FixedUpdate()
+    {
+        HandleLayers();
+    }
+
+    private void HandleLayers()
+    {
+        if(!grounded)
+        {
+            myAnimator.SetLayerWeight(1, 1);
+        }
+        else
+        {
+            myAnimator.SetLayerWeight(1, 0);
+        }
     }
 }
 
